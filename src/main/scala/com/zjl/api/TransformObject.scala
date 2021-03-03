@@ -1,6 +1,8 @@
 package com.zjl.api
-import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction, RichFlatMapFunction}
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.util.Collector
 
 object TransformObject {
 
@@ -76,4 +78,19 @@ class MyMapper extends MapFunction[SensorReading,(String,Double)]{
 
 class MyFilter(keyword:String) extends FilterFunction[SensorReading]{
   override def filter(value: SensorReading): Boolean = value.id.startsWith(keyword)
+}
+
+//富函数
+class MyRichFlatMapper extends RichFlatMapFunction[SensorReading,String]{
+  override def flatMap(value: SensorReading, out: Collector[String]): Unit = {
+
+    out.collect(value.id)
+    out.collect("value")
+//    getRuntimeContext.
+
+  }
+
+  override def open(parameters: Configuration): Unit = super.open(parameters)
+
+  override def close(): Unit = super.close()
 }
