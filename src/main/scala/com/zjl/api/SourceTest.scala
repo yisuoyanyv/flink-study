@@ -56,7 +56,7 @@ object SourceTest {
 
 
 
-    // 4.自定义source
+    // 4.自定义source   模拟自定义数据源
     val inputStream4=env.addSource(new MySensorSource())
 
     inputStream4.print("stream4").setParallelism(1)
