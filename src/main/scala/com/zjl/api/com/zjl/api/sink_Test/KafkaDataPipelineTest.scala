@@ -1,7 +1,7 @@
 package com.zjl.api.com.zjl.api.sink_Test
 
 import com.zjl.api.SensorReading
-import org.apache.flink.api.common.serialization.{SimpleStringEncoder, SimpleStringSchema}
+import org.apache.flink.api.common.serialization.{SerializationSchema, SimpleStringEncoder, SimpleStringSchema}
 import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
@@ -35,6 +35,12 @@ object KafkaDataPipelineTest {
     )
 
     //写入kafka
+
+    //假如写入的类型不为String类型，而是元组类型，则需自定义序列化
+//    dataStream.map(data=>(data.id,data.temperature))
+//      .addSink(new FlinkKafkaProducer011[(String, Double)]("hadoop102:9092","sinktest",new SerializationSchema[(String, Double)] {
+//        override def serialize(t: (String, Double)): Array[Byte] = s"id:${t._1} temp:${t._2}".toArray.map(_.toByte)
+//      }))
 
     dataStream.map(data=>data.toString)
       .addSink(new FlinkKafkaProducer011[String]("hadoop102:9092","sinktest",new SimpleStringSchema()))
