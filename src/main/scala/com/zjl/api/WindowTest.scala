@@ -1,13 +1,16 @@
 package com.zjl.api
 
 import org.apache.flink.api.common.functions.{AggregateFunction, ReduceFunction}
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
+import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.api.scala._
+import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, SlidingProcessingTimeWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
 object WindowTest {
   def main(args: Array[String]): Unit = {
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+
+//    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)//设置时间语义
     env.setParallelism(1)
 
     //读取数据
@@ -29,9 +32,18 @@ object WindowTest {
 //      .window(SlidingProcessingTimeWindows.of(Time.hours(1),Time.minutes(10)))  //1小时窗口，10分钟滑动一次
 //      .countWindow(10,2) //滑动计数窗口
       //      .minBy("temperature")
+
+      //可选API
+      .trigger()
+      .evictor()
+      .allowedLateness(Time.minutes(1))
+      .sideOutputLateData(new OutputTag[SensorReading]("late-date"))
+
       //窗口函数
 //      .reduce((curState,newData)=>SensorReading(newData.id,newData.timestamp+1,curState.temperature.max(newData.temperature)))
       .reduce(new MyMaxTemp())
+
+    aggStream.getSideOutput(new OutputTag[SensorReading]("late-date"))
 
 
     aggStream.print()
