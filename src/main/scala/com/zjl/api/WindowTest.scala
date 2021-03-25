@@ -4,13 +4,15 @@ import org.apache.flink.api.common.functions.{AggregateFunction, ReduceFunction}
 import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, SlidingProcessingTimeWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
 object WindowTest {
   def main(args: Array[String]): Unit = {
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
-//    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)//设置时间语义
+    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)//设置时间语义
+    env.getConfig.setAutoWatermarkInterval(100)
     env.setParallelism(1)
 
     //读取数据
@@ -21,6 +23,10 @@ object WindowTest {
       val arr: Array[String] = line.split(",")
       SensorReading(arr(0).trim, arr(1).trim.toLong, arr(2).trim.toDouble)
     })
+      .assignAscendingTimestamps(data=>data.timestamp*1000L) //升序数据的时间戳提取
+      .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor[SensorReading](Time.seconds(3)) {
+        override def extractTimestamp(t: SensorReading): Long = t.timestamp*1000L
+      })
 
     //开窗集合操作、
     val aggStream=dataStream
@@ -34,8 +40,8 @@ object WindowTest {
       //      .minBy("temperature")
 
       //可选API
-      .trigger()
-      .evictor()
+//      .trigger()
+//      .evictor()
       .allowedLateness(Time.minutes(1))
       .sideOutputLateData(new OutputTag[SensorReading]("late-date"))
 
@@ -43,10 +49,10 @@ object WindowTest {
 //      .reduce((curState,newData)=>SensorReading(newData.id,newData.timestamp+1,curState.temperature.max(newData.temperature)))
       .reduce(new MyMaxTemp())
 
-    aggStream.getSideOutput(new OutputTag[SensorReading]("late-date"))
+    aggStream.getSideOutput(new OutputTag[SensorReading]("late-date")).print("late")
 
-
-    aggStream.print()
+    dataStream.print("data")
+    aggStream.print("agg")
 
     env.execute("Window  API test")
 
