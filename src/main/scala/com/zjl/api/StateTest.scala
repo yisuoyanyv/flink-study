@@ -21,8 +21,20 @@ object StateTest {
 
     val warningStream=dataStream
       .keyBy(_.id)  //以id分组
-      .flatMap(new TempChangeWarning(10.0))
-
+//      .flatMap(new TempChangeWarning(10.0))
+      .flatMapWithState[(String,Double,Double),Double](
+        {
+          case(inputData:SensorReading,None)=>(List.empty,Some(inputData.temperature))
+          case (inputData:SensorReading,lastTemp)=>{
+            val diff=(inputData.temperature-lastTemp.get).abs
+            if(diff>10.0){
+              (List((inputData.id,lastTemp.get,inputData.temperature)),Some(inputData.temperature))
+            }else{
+              (List.empty,Some(inputData.temperature))
+            }
+          }
+        }
+      )
     warningStream.print()
     inputStream.print("input:")
 
