@@ -3,6 +3,9 @@ package com.zjl.api
 import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
+import org.apache.flink.runtime.state.filesystem.FsStateBackend
+import org.apache.flink.runtime.state.memory.MemoryStateBackend
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 
@@ -10,6 +13,7 @@ object StateTest {
   def main(args: Array[String]): Unit = {
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
+    env.setStateBackend(new RocksDBStateBackend("",true))
 
     //读取数据
     val inputStream: DataStream[String] = env.socketTextStream("localhost", 7777)
