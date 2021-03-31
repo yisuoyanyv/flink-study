@@ -1,11 +1,13 @@
 package com.zjl.api
 
 import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction}
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
 import org.apache.flink.runtime.state.filesystem.FsStateBackend
 import org.apache.flink.runtime.state.memory.MemoryStateBackend
+import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 
@@ -14,6 +16,19 @@ object StateTest {
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
     env.setStateBackend(new RocksDBStateBackend("",true))
+
+    //容错机制相关配置
+    //checkpoint
+    env.enableCheckpointing(1000L)
+    env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
+    env.getCheckpointConfig.setCheckpointTimeout(60000L)
+    env.getCheckpointConfig.setMaxConcurrentCheckpoints(2)
+    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(500L) //会覆盖setMaxConcurrentCheckpoints设置，为1
+    env.getCheckpointConfig.setPreferCheckpointForRecovery(true)
+    env.getCheckpointConfig.setTolerableCheckpointFailureNumber(3)
+
+    // 重启策略
+    env.setRestartStrategy(RestartStrategies.fixedDelayRestart(5,10000L))
 
     //读取数据
     val inputStream: DataStream[String] = env.socketTextStream("localhost", 7777)
