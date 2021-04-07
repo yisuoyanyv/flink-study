@@ -34,7 +34,11 @@ object Example {
     })
 
     //基于env创建一个表执行环境
-    val settings: EnvironmentSettings = EnvironmentSettings.newInstance().useOldPlanner().inStreamingMode().build()
+    val settings: EnvironmentSettings = EnvironmentSettings
+      .newInstance()
+//      .useOldPlanner() //flink Planner  这个报错
+      .useBlinkPlanner() //blink Pannner
+      .inStreamingMode().build()
     val tableEnv=StreamTableEnvironment.create(env,settings)
 
     //基于一条流创建一张表，流中的样例类的字段就对应表的列
