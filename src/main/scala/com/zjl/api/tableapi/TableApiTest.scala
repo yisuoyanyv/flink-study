@@ -126,6 +126,24 @@ object TableApiTest {
 
     resultTable.insertInto("outputTable")
 
+// Mysql 写出
+//    val sinkDDL:String=
+//      """
+//        |create table jdbcOutputTable(
+//        |  id varchar(20) not null,
+//        |  cnt bigint not null
+//        |) with(
+//        |  'connector.type'='jdbc',
+//        |  'connector.url'='jdbc:mysql://localhost:3306/test',
+//        |  'connector.table'='sensor_count',
+//        |  'connector.driver'='com.mysql.jdbc.Driver',
+//        |  'connector.username'='root',
+//        |  'connector.password'='123456'
+//        |""".stripMargin
+//    tableEnv.sqlUpdate(sinkDDL)  //执行DDL创建表
+//    aggResultSqlTable.insertInto("jdbcOutputTable")
+
+
 
     env.execute("api test")
 
