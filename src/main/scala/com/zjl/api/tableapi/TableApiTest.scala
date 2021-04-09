@@ -1,6 +1,6 @@
 package com.zjl.api.tableapi
 
-import org.apache.flink.api.scala.{ExecutionEnvironment, createTypeInformation}
+import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.table.api._
 import org.apache.flink.table.api.scala._
@@ -10,6 +10,7 @@ object TableApiTest {
   def main(args: Array[String]): Unit = {
     // 1.表执行环境
     val env=StreamExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(1)
 //    val tableEnv=StreamTableEnvironment.create(env)
 
 //    // 1.1老版本的流处理环境
@@ -74,7 +75,7 @@ object TableApiTest {
     // 3.1.1 简单查询
     val resultTable = sensorTable
       .select('id, 'temperature)
-      .where('id === "sensor_1")
+//      .where('id === "sensor_1")
 
     // 3.1.2 聚合查询
     val aggResultTable =  sensorTable
@@ -108,6 +109,24 @@ object TableApiTest {
     aggResultTable.printSchema()
     aggResultTable.toRetractStream[(String,Long)].print("res")
     aggResultSqlTable.toRetractStream[(String,Long)].print("sql")
+
+
+    // 4.输出
+    // 输出到文件
+    val outputPath="F:\\workspace\\flink-study\\src\\main\\resources\\output.txt"
+
+    blinkStreamTableEnv.connect(
+      new FileSystem().path(outputPath))//定义到文件系统给的连接
+      .withFormat(new Csv())    //定义以csv格式进行数据格式化
+      .withSchema(new Schema()
+        .field("id",DataTypes.STRING())
+        .field("temperature",DataTypes.DOUBLE())
+      )   //定义表结构
+      .createTemporaryTable("outputTable")  //创建临时表
+
+    resultTable.insertInto("outputTable")
+
+
     env.execute("api test")
 
   }
